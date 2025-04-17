@@ -1,56 +1,48 @@
 use std::{fmt::Display, i32};
 
+const MINUTES_IN_HOUR: i32 = 60;
+const HOURS_IN_DAY: i32 = 24;
+
 #[derive(Debug, PartialEq)]
 pub struct Clock {
-    hours: u32,
-    minutes: u32,
+    hours: i32,
+    minutes: i32,
 }
 
-fn compute_hours(hours: i32) -> u32 {
-    eprintln!("Computing hours for {hours:?}");
-    let real_hours = match hours {
-        i32::MIN..=-1 => 24 - (hours.abs() % 24) as u32,
-        0..=23 => hours as u32,
-        24..=i32::MAX => (hours % 24) as u32,
-    };
-    if real_hours == 24 { 0 } else { real_hours }
+fn get_hours_in_day(hours: i32) -> i32 {
+    match hours {
+        // Acha o valor congruente com a quantidade de horas em mod 24 (para que caiba em um dia),
+        // e subtrai este valor do total de um dia (por isso o 24 - (...)). Ao final, aplica
+        // novamente o módulo 24 para o caso de o resultado ter sido 24
+        i32::MIN..=-1 => (HOURS_IN_DAY - (hours.abs() % HOURS_IN_DAY)) % HOURS_IN_DAY,
+        _ => hours % HOURS_IN_DAY,
+    }
 }
 
-fn compute_minutes(minutes: i32) -> (u32, i32) {
-    let diff_hours = minutes as f32 / 60_f32;
+fn compute_minutes(minutes: i32) -> (i32, i32) {
+    let hours = (minutes as f32 / MINUTES_IN_HOUR as f32).floor() as i32;
 
-    eprintln!("first diff hours: {diff_hours:?}");
-
-    let diff_hours: i32 = diff_hours.floor() as i32;
-
-    let real_minutes = if minutes < 0 {
-        (minutes + (60 * diff_hours.abs())) as u32
+    let minutes = if minutes < 0 {
+        minutes + (MINUTES_IN_HOUR * hours.abs())
     } else {
-        (minutes % 60) as u32
+        minutes % MINUTES_IN_HOUR
     };
 
-    eprintln!(
-        "Computing minutes for {minutes:?}: diff_hours: {diff_hours:?}, real_minutes: {real_minutes:?}"
-    );
-
-    (real_minutes, diff_hours)
+    (get_hours_in_day(hours), minutes)
 }
 
 impl Clock {
     pub fn new(hours: i32, minutes: i32) -> Self {
-        let (real_minutes, diff_hours) = compute_minutes(minutes);
-        Clock {
-            hours: compute_hours(compute_hours(hours) as i32 + diff_hours),
-            minutes: real_minutes,
-        }
+        let (hours, minutes) = compute_minutes(MINUTES_IN_HOUR * hours + minutes);
+        Clock { hours, minutes }
     }
 
     pub fn add_minutes(mut self, minutes: i32) -> Self {
-        eprintln!("adding {minutes} minutes");
         if minutes != 0 {
-            let (real_minutes, diff_hours) = compute_minutes(self.minutes as i32 + minutes);
-            self.minutes = real_minutes;
-            self.hours = compute_hours(self.hours as i32 + diff_hours);
+            let (hours, minutes) =
+                compute_minutes((MINUTES_IN_HOUR * self.hours) + (self.minutes + minutes));
+            self.hours = hours;
+            self.minutes = minutes;
         }
 
         self
