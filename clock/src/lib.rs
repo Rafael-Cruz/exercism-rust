@@ -9,26 +9,15 @@ pub struct Clock {
     minutes: i32,
 }
 
-fn get_hours_in_day(hours: i32) -> i32 {
-    match hours {
-        // Acha o valor congruente com a quantidade de horas em mod 24 (para que caiba em um dia),
-        // e subtrai este valor do total de um dia (por isso o 24 - (...)). Ao final, aplica
-        // novamente o módulo 24 para o caso de o resultado ter sido 24
-        i32::MIN..=-1 => (HOURS_IN_DAY - (hours.abs() % HOURS_IN_DAY)) % HOURS_IN_DAY,
-        _ => hours % HOURS_IN_DAY,
-    }
-}
-
 fn compute_minutes(minutes: i32) -> (i32, i32) {
-    let hours = (minutes as f32 / MINUTES_IN_HOUR as f32).floor() as i32;
+    let rem = minutes.rem_euclid(MINUTES_IN_HOUR);
 
-    let minutes = if minutes < 0 {
-        minutes + (MINUTES_IN_HOUR * hours.abs())
-    } else {
-        minutes % MINUTES_IN_HOUR
-    };
+    eprintln!("minutes: {minutes}, rem: {rem}");
+    
+    let hours = (minutes.div_euclid(MINUTES_IN_HOUR)).rem_euclid(HOURS_IN_DAY);
+    let minutes = minutes.rem_euclid(MINUTES_IN_HOUR);
 
-    (get_hours_in_day(hours), minutes)
+    (hours, minutes)
 }
 
 impl Clock {
